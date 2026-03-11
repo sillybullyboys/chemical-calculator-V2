@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Chemical Price Calculator</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { -webkit-text-size-adjust: 100%; font-size: 16px; }
+
+  body {
+    min-height: 100vh; min-height: -webkit-fill-available;
+    background: #0b0c12;
+    color: #d0d3e0;
+    font-family: 'IBM Plex Mono', 'Courier New', monospace;
+    padding: 16px 12px 40px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── HEADER ── */
+  .hdr { text-align: center; margin-bottom: 22px; padding-top: 8px; }
+  .hdr-tag {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 9px; letter-spacing: 3.5px; text-transform: uppercase;
+    color: #525882; font-weight: 600; margin-bottom: 4px;
+  }
+  .hdr-dot { width: 6px; height: 6px; border-radius: 50%; background: #00e5a0; box-shadow: 0 0 10px #00e5a0; }
+  .hdr h1 {
+    font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700;
+    background: linear-gradient(135deg, #c8cce0 0%, #00e5a0 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+
+  /* ── LAYOUT ── */
+  .wrap { max-width: 700px; margin: 0 auto; }
+  .card {
+    background: #12131c; border: 1px solid #1e2035;
+    border-radius: 14px; padding: 16px; margin-bottom: 12px;
+  }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  /* ── LABELS ── */
+  .lbl {
+    font-size: 9px; letter-spacing: 2px; text-transform: uppercase;
+    color: #525882; font-weight: 600; margin-bottom: 8px;
+  }
+
+  /* ── NATIVE SELECTS (iOS/Android friendly) ── */
+  .sel-wrap { position: relative; }
+  .sel-wrap select {
+    width: 100%; appearance: none; -webkit-appearance: none;
+    background: #181a28; color: #d0d3e0; border: 1px solid #262842;
+    border-radius: 10px; padding: 14px 40px 14px 14px;
+    font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 500;
+    outline: none; cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%23525882' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 14px center;
+  }
+  .sel-wrap select:focus { border-color: #00e5a0; }
+  .sel-wrap select option { background: #181a28; color: #d0d3e0; }
+  .sel-sub { font-size: 10px; color: #525882; margin-top: 5px; }
+
+  /* ── SLIDERS ── */
+  .slider-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 2px; }
+  .slider-val {
+    font-family: 'Space Grotesk', sans-serif; font-size: 24px; font-weight: 700;
+    color: #00e5a0;
+  }
+  .slider-ref { font-size: 10px; color: #525882; margin-bottom: 12px; }
+  .slider-ref.warn { color: #d4a017; }
+  input[type=range] {
+    -webkit-appearance: none; appearance: none; width: 100%; height: 6px;
+    border-radius: 3px; outline: none; background: #1e2035;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 28px; height: 28px; border-radius: 50%;
+    background: #00e5a0; border: 3px solid #0b0c12;
+    box-shadow: 0 0 14px rgba(0,229,160,0.4);
+  }
+  input[type=range]::-moz-range-thumb {
+    width: 28px; height: 28px; border-radius: 50%; border: 3px solid #0b0c12;
+    background: #00e5a0; box-shadow: 0 0 14px rgba(0,229,160,0.4);
+  }
+  .slider-minmax { display: flex; justify-content: space-between; font-size: 10px; color: #3a3d58; margin-top: 4px; }
+
+  /* ── ALERTS ── */
+  .alrt {
+    border-radius: 10px; padding: 10px 12px; font-size: 11px; line-height: 1.5;
+    display: flex; align-items: flex-start; gap: 8px; margin-top: 10px;
+  }
+  .alrt-hi { background: rgba(230,60,60,0.08); border: 1px solid rgba(230,60,60,0.22); color: #e55; }
+  .alrt-lo { background: rgba(0,229,160,0.06); border: 1px solid rgba(0,229,160,0.18); color: #00e5a0; }
+  .alrt-wn { background: rgba(212,160,23,0.06); border: 1px solid rgba(212,160,23,0.18); color: #d4a017; }
+  .alrt-icon { font-size: 15px; flex-shrink: 0; line-height: 1; }
+  .alrt-center { justify-content: center; text-align: center; }
+
+  /* ── COST GRID ── */
+  .costs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  @media(min-width:520px){ .costs { grid-template-columns: repeat(4,1fr); } }
+  .cost-box {
+    background: #161829; border: 1px solid #1e2035; border-radius: 10px;
+    padding: 12px 8px; text-align: center;
+  }
+  .cost-box .ico { font-size: 16px; margin-bottom: 3px; }
+  .cost-box .ctag { font-size: 8px; letter-spacing: 1.2px; color: #525882; text-transform: uppercase; margin-bottom: 4px; }
+  .cost-box .cval { font-family: 'Space Grotesk', sans-serif; font-size: 14px; font-weight: 600; color: #a0a5c0; }
+  .ddp-bar {
+    display: flex; justify-content: space-between; align-items: center;
+    background: #161829; border: 1px solid #1e2035; border-radius: 10px;
+    padding: 12px 16px; margin-top: 10px;
+  }
+  .ddp-bar .dtag { font-size: 10px; letter-spacing: 1.5px; color: #525882; text-transform: uppercase; }
+  .ddp-bar .dval { font-family: 'Space Grotesk', sans-serif; font-size: 19px; font-weight: 700; color: #d0d3e0; }
+
+  /* ── RESULT ── */
+  .res-card {
+    background: linear-gradient(145deg, rgba(0,229,160,0.06) 0%, #12131c 100%);
+    border: 1px solid rgba(0,229,160,0.18); text-align: center; padding: 26px 14px;
+  }
+  .res-tag { font-size: 9px; letter-spacing: 3px; text-transform: uppercase; color: #00e5a0; font-weight: 600; margin-bottom: 4px; }
+  .res-price {
+    font-family: 'Space Grotesk', sans-serif; font-size: 38px; font-weight: 700;
+    color: #00e5a0; text-shadow: 0 0 30px rgba(0,229,160,0.25); line-height: 1.1;
+  }
+  .res-sub { font-size: 10px; color: #525882; margin-top: 6px; word-break: break-word; }
+  .res-note { font-size: 11px; color: #525882; margin-top: 14px; }
+
+  /* ── FOOTER ── */
+  .ftr { text-align: center; font-size: 8px; color: #2a2d45; letter-spacing: 1px; padding: 14px 4px 0; line-height: 1.7; }
+
+  @keyframes pop { 0%{transform:scale(.96);opacity:.6} 100%{transform:scale(1);opacity:1} }
+  .pop { animation: pop .3s ease-out; }
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-tag"><span class="hdr-dot"></span>Chemical Pricing Engine<span class="hdr-dot"></span></div>
+  <h1>DDP Selling Price Calculator</h1>
+</div>
+
+<div class="wrap">
+
+  <!-- CHEMICAL -->
+  <div class="card">
+    <div class="lbl">Chemical Product</div>
+    <div class="sel-wrap"><select id="selChem"></select></div>
+    <div class="sel-sub" id="chemInfo"></div>
+  </div>
+
+  <!-- CIF -->
+  <div class="card">
+    <div class="slider-top">
+      <div class="lbl" style="margin:0">CIF / MT (USD) — Supplier Cost</div>
+      <div class="slider-val" id="cifVal"></div>
+    </div>
+    <div class="slider-ref" id="cifRef"></div>
+    <input type="range" id="cifSlider">
+    <div class="slider-minmax"><span id="cifMin"></span><span id="cifMax"></span></div>
+    <div id="cifAlert"></div>
+  </div>
+
+  <!-- LOCATION + CLIENT -->
+  <div class="row2">
+    <div class="card">
+      <div class="lbl">Delivery Location</div>
+      <div class="sel-wrap"><select id="selLoc"><option value="Soyo">Soyo</option><option value="Luanda">Luanda</option></select></div>
+      <div class="sel-sub" id="locNote" style="color:#d4a017;display:none">Luanda only for this chemical</div>
+    </div>
+    <div class="card">
+      <div class="lbl">Client</div>
+      <div class="sel-wrap"><select id="selClient"><option>SLB</option><option>HALLIBURTON</option><option>BAKER HUGHES</option></select></div>
+    </div>
+  </div>
+
+  <!-- MARKUP -->
+  <div class="card">
+    <div class="slider-top">
+      <div class="lbl" style="margin:0">Markup</div>
+      <div class="slider-val" id="mkVal">40%</div>
+    </div>
+    <input type="range" id="mkSlider" min="0" max="150" step="1" value="40">
+    <div class="slider-minmax"><span>0%</span><span>150%</span></div>
+  </div>
+
+  <!-- BREAKDOWN -->
+  <div class="card">
+    <div class="lbl" id="brkLbl"></div>
+    <div class="costs">
+      <div class="cost-box"><div class="ico">📦</div><div class="ctag">CIF/UOM</div><div class="cval" id="vCIF"></div></div>
+      <div class="cost-box"><div class="ico">🚛</div><div class="ctag">Transport</div><div class="cval" id="vTrn"></div></div>
+      <div class="cost-box"><div class="ico">📋</div><div class="ctag">Clear. 6.7%</div><div class="cval" id="vClr"></div></div>
+      <div class="cost-box"><div class="ico">🏢</div><div class="ctag">Storage</div><div class="cval" id="vStr"></div></div>
+    </div>
+    <div class="ddp-bar"><span class="dtag">Total DDP Cost</span><span class="dval" id="vDDP"></span></div>
+  </div>
+
+  <!-- RESULT -->
+  <div class="card res-card" id="resCard">
+    <div class="res-tag" id="resTag"></div>
+    <div class="res-price" id="resPrice"></div>
+    <div class="res-sub" id="resSub"></div>
+    <div id="resContract"></div>
+  </div>
+
+  <div class="ftr" id="ftr"></div>
+</div>
+
+<script>
+var C=[
+{n:"CALCIUM CHLORIDE PELLETS 94-97",u:"BG; 1 MT",cif:248,kg:1000,ct:18,sS:9,sL:9,rS:417,rL:410.34,h:null,hs:"28272000"},
+{n:"M-I WATE (BARITE) 4.1 S.G.",u:"BG; 1500 KG",cif:209,kg:1500,ct:18,sS:.25,sL:9,rS:462,rL:443,h:null,hs:"25111000"},
+{n:"SAFE-CARB 20 - CaCO3 F (1MT)",u:"BG; 1 MT",cif:null,kg:1000,ct:18,sS:9,sL:9,rS:378.35,rL:372.32,h:null,hs:"28365000"},
+{n:"SAFE-CARB 40 - CaCO3 M (1MT)",u:"BG; 1 MT",cif:null,kg:1000,ct:18,sS:9,sL:9,rS:378.35,rL:372.32,h:null,hs:"28365000"},
+{n:"CALCIUM CHLORIDE POWDER 94-97",u:"BG; 25 KG",cif:288,kg:25,ct:800,sS:.25,sL:.25,rS:11.08,rL:10.90,h:null,hs:"28272000"},
+{n:"CAUSTIC SODA",u:"CAN; 25 KG",cif:790,kg:25,ct:800,sS:.25,sL:.25,rS:24.31,rL:24.17,h:null,hs:"28151100"},
+{n:"CITRIC ACID",u:"BG; 25 KG",cif:815,kg:25,ct:800,sS:.25,sL:.25,rS:27.64,rL:27.40,h:null,hs:"29181400"},
+{n:"LIME",u:"BG; 25 KG",cif:380,kg:25,ct:800,sS:.25,sL:.25,rS:16.99,rL:10.41,h:null,hs:"25221000"},
+{n:"MONO ETHYLENE GLYCOL",u:"TANK; 1000 LT",cif:785,kg:1100,ct:18,sS:9,sL:9,rS:1186.47,rL:1163.28,h:1600,hs:"29053100"},
+{n:"SAFE-CARB 20 - CaCO3 F (25KG)",u:"BG; 25 KG",cif:null,kg:25,ct:800,sS:.25,sL:.25,rS:11.20,rL:11.07,h:null,hs:"28365000"},
+{n:"SAFE-CARB 250 - CaCO3 C",u:"BG; 25 KG",cif:null,kg:25,ct:800,sS:.25,sL:.25,rS:10.25,rL:10.13,h:null,hs:"28365000"},
+{n:"SAFE-CARB 40 - CaCO3 M (25KG)",u:"BG; 25 KG",cif:null,kg:25,ct:800,sS:.25,sL:.25,rS:10.90,rL:10.71,h:null,hs:"28365000"},
+{n:"SAFE-CARB 500 - CaCO3 XC",u:"BG; 25 KG",cif:null,kg:25,ct:800,sS:.25,sL:.25,rS:10.27,rL:9.77,h:null,hs:"28365000"},
+{n:"SODA ASH",u:"BG; 25 KG",cif:380,kg:25,ct:800,sS:null,sL:.25,rS:null,rL:15.33,h:null,hs:"28362000",lo:1},
+{n:"Glutaraldehyde 50%",u:"IBC; 1000 lt",cif:1480,kg:1100,ct:18,sS:null,sL:9,rS:null,rL:null,h:null,hs:"29121900",lo:1},
+{n:"Glutaraldehyde 25%",u:"IBC; 1000 lt",cif:980,kg:1000,ct:18,sS:null,sL:9,rS:null,rL:null,h:null,hs:"29121900",lo:1},
+{n:"Tri Ethylene Glycol 99% Min",u:"IBC; 1000 lt",cif:1175,kg:1100,ct:18,sS:null,sL:9,rS:null,rL:null,h:null,hs:"29094900",lo:1},
+{n:"THPS 20%",u:"IBC; 1000 lt",cif:900,kg:1000,ct:18,sS:null,sL:9,rS:null,rL:null,h:null,hs:"29319090",lo:1},
+{n:"THPS 50%",u:"IBC; 1000 lt",cif:1100,kg:1000,ct:18,sS:null,sL:9,rS:null,rL:null,h:null,hs:"29319090",lo:1}
+];
+
+var cifOverride=null, lastIdx=-1;
+function $(x){return document.getElementById(x)}
+function fm(v){return v==null||isNaN(v)?"\u2014":"$"+v.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})}
+function bg(v,mn,mx){var p=((v-mn)/(mx-mn))*100;return"linear-gradient(to right,#00e5a0 0%,#00e5a0 "+p+"%,#1e2035 "+p+"%,#1e2035 100%)"}
+
+// Build chemical select
+var sel=$("selChem");
+for(var i=0;i<C.length;i++){
+  var o=document.createElement("option");
+  o.value=i; o.textContent=C[i].n+" \u2014 "+C[i].u;
+  sel.appendChild(o);
+}
+
+function calc(){
+  var idx=parseInt($("selChem").value);
+  var c=C[idx];
+  var loc=$("selLoc").value;
+  var client=$("selClient").value;
+  var markup=parseInt($("mkSlider").value);
+
+  // Location lock for Luanda-only chemicals
+  if(c.lo){
+    $("selLoc").value="Luanda"; loc="Luanda";
+    $("selLoc").disabled=true;
+    $("locNote").style.display="block";
+  } else {
+    $("selLoc").disabled=false;
+    $("locNote").style.display="none";
+  }
+
+  // CIF range
+  var base=c.cif;
+  var mn=base?Math.round(base*0.5):50;
+  var mx=base?Math.round(base*2.3):3000;
+  var cs=$("cifSlider");
+
+  // Reset slider when chemical changes
+  if(idx!==lastIdx){
+    cifOverride=null;
+    cs.min=mn; cs.max=mx; cs.step=1;
+    cs.value=base||mn;
+    lastIdx=idx;
+  } else {
+    cs.min=mn; cs.max=mx; cs.step=1;
+  }
+
+  var cv=parseInt(cs.value);
+  cs.style.background=bg(cv,mn,mx);
+  $("cifVal").textContent=fm(cv);
+  $("cifMin").textContent="$"+mn;
+  $("cifMax").textContent="$"+mx;
+
+  if(base){
+    $("cifRef").textContent="Spreadsheet ref: $"+base+"/MT  \u2022  Range: $"+mn+" \u2013 $"+mx;
+    $("cifRef").className="slider-ref";
+  } else {
+    $("cifRef").textContent="\u26A0 No base CIF in spreadsheet \u2014 adjust manually";
+    $("cifRef").className="slider-ref warn";
+  }
+
+  // CIF alert
+  var ca="";
+  if(base){
+    var pd=((cv-base)/base)*100;
+    if(pd>10) ca='<div class="alrt alrt-hi"><span class="alrt-icon">\u25B2</span><span><b>PRICE TRENDING HIGH</b> \u2014 CIF is '+pd.toFixed(1)+'% above reference ($'+base+'/MT)</span></div>';
+    else if(pd<0) ca='<div class="alrt alrt-lo"><span class="alrt-icon">\u25BC</span><span><b>POSITIVE \u2014 TRENDING LOW</b> \u2014 CIF is '+Math.abs(pd).toFixed(1)+'% below reference ($'+base+'/MT)</span></div>';
+  }
+  $("cifAlert").innerHTML=ca;
+
+  // Chemical sub-info
+  $("chemInfo").textContent=c.u+(base?"  \u2022  Base CIF: $"+base+"/MT":"  \u2022  CIF not set in spreadsheet");
+
+  // Markup display
+  $("mkSlider").style.background=bg(markup,0,150);
+  $("mkVal").textContent=markup+"%";
+
+  // ── CALCULATIONS ──
+  var cifOUM=(cv/1000)*c.kg;
+  var trCont=loc==="Soyo"?1400:1000; // port-to-warehouse 500 + soyo 900 or luanda 500
+  var trUOM=trCont/c.ct;
+  var clrUOM=cifOUM*0.067;
+  var stor=loc==="Soyo"?(c.sS||0):(c.sL||0);
+  var ddp=cifOUM+trUOM+clrUOM+stor;
+  var sell=ddp*(1+markup/100);
+
+  // Cost breakdown
+  $("brkLbl").textContent="Cost Breakdown per "+c.u;
+  $("vCIF").textContent=fm(cifOUM);
+  $("vTrn").textContent=fm(trUOM);
+  $("vClr").textContent=fm(clrUOM);
+  $("vStr").textContent=fm(stor);
+  $("vDDP").textContent=fm(ddp);
+
+  // Result
+  $("resTag").textContent="Selling Price / "+c.u;
+  $("resPrice").textContent=fm(sell);
+  $("resSub").textContent=c.n+"  \u2022  "+loc+"  \u2022  "+client+"  \u2022  "+markup+"% markup";
+
+  // Pulse
+  var rc=$("resCard"); rc.classList.remove("pop"); void rc.offsetWidth; rc.classList.add("pop");
+
+  // Contract comparison
+  var cp=null;
+  if(client==="SLB") cp=loc==="Soyo"?c.rS:c.rL;
+  else if(client==="HALLIBURTON"&&c.h) cp=c.h;
+
+  var ch="";
+  if(cp){
+    var dv=((sell-cp)/cp)*100;
+    if(Math.abs(dv)>0.5){
+      var above=dv>0;
+      ch='<div class="alrt '+(above?"alrt-hi":"alrt-wn")+' alrt-center" style="margin-top:14px"><span class="alrt-icon">'+(above?"\u26A0\uFE0F":"\uD83D\uDCC9")+'</span><span>Selling price is <b>'+Math.abs(dv).toFixed(1)+'% '+(above?"above":"below")+'</b> '+client+' contract price of <b>'+fm(cp)+'</b>/UOM</span></div>';
+    } else {
+      ch='<div class="alrt alrt-lo alrt-center" style="margin-top:14px"><span class="alrt-icon">\u2713</span><span>Aligned with '+client+' contract: <b>'+fm(cp)+'</b>/UOM</span></div>';
+    }
+  } else if(client==="SLB"){
+    ch='<div class="alrt alrt-wn alrt-center" style="margin-top:14px"><span>No SLB contract price for this chemical'+(c.lo?'':' in '+loc)+'</span></div>';
+  } else if(client==="HALLIBURTON"){
+    ch='<div class="res-note">No Halliburton contract price. HAL contract covers MEG only.</div>';
+  } else {
+    ch='<div class="res-note">No contract pricing on file for Baker Hughes \u2014 open pricing.</div>';
+  }
+  $("resContract").innerHTML=ch;
+
+  // Footer
+  $("ftr").textContent="TRANSPORT: Port\u2192Warehouse $500 + Warehouse\u2192"+(loc==="Soyo"?"Soyo $900":"Luanda $500")+"/truck  \u2022  CLEARANCE: 6.7% of CIF/UOM  \u2022  HS: "+c.hs;
+}
+
+// ── EVENT LISTENERS (all use native events, 100% iOS/Android safe) ──
+$("selChem").addEventListener("change", calc);
+$("selLoc").addEventListener("change", calc);
+$("selClient").addEventListener("change", calc);
+$("cifSlider").addEventListener("input", function(){ cifOverride=1; calc(); });
+$("mkSlider").addEventListener("input", calc);
+
+// Initial render
+calc();
+</script>
+</body>
+</html>
